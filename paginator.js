@@ -7,57 +7,8 @@ class Paginator {
         this.options = options;
     }
 
-    async fetchAllPages(method, args, options = {}) {
-        const requestOptions = {...this.options, ...options};
-        method = method.bind(this.context);
-        if (requestOptions.type === 'count') {
-            return this._fetchCountBasedPages(method, args, requestOptions);
-        } else if (requestOptions.type === 'token') {
-            return this._fetchTokenBasedPages(method, args, requestOptions);
-        } else {
-            throw new Error('Invalid pagination type');
-        }
-    }
-
-    async _fetchCountBasedPages(method, args, {initialArgs, resultsKey, offsetKey, countKey, isEmpty}) {
-        let results = [];
-        let offset = 0;
-        let hasMore = true;
-
-        while (hasMore) {
-            const response = await method({
-                ...initialArgs,
-                ...args,
-                [offsetKey]: offset,
-            });
-
-            const pageResults = resultsKey ? response[resultsKey] : response;
-            results = results.concat(pageResults);
-            offset += pageResults.length;
-            hasMore = offset < response[countKey] || pageResults.length === 0;
-        }
-
-        return results;
-    }
-
-    async _fetchTokenBasedPages(method, args, {initialArgs, resultsKey, tokenParam, tokenPath, isEmpty}) {
-        let results = [];
-        let token = null;
-        let hasMore = true;
-
-        while (hasMore) {
-            const params = {...initialArgs, ...args};
-            if (token) params[tokenParam] = token;
-
-            const response = await method(params);
-            const pageResults = response[resultsKey];
-            results = results.concat(pageResults);
-
-            token = jsonpointer.get(response, tokenPath); // Adjust path for jsonpointer
-            hasMore = token !== undefined;
-        }
-
-        return results;
+    newMethod(method, options = {}) {
+        return new PaginatorMethod(this.context, method, {...this.options, ...options});
     }
 }
 
