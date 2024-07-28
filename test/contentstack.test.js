@@ -1,4 +1,4 @@
-const {connectToDatabase, disconnectFromDatabase, createObjectId, Auther} = require('@friggframework/core');
+const {connectToDatabase, disconnectFromDatabase, Auther} = require('@friggframework/core');
 const {Definition} = require('@friggframework/api-module-contentstack');
 const {Authenticator} = require('@friggframework/test');
 const {Paginator, PaginatorMethod} = require('../paginator');
@@ -7,7 +7,7 @@ process.env.MONGO_URI = 'mongodb://localhost:27017/paginator';
 const userId = '669a906fce46e377356627fa'
 
 describe('Contentstack Paging Tests', () => {
-    let module, authUrl;
+    let module;
     beforeAll(async () => {
         await connectToDatabase();
         module = await Auther.getInstance({
@@ -98,7 +98,7 @@ describe('Contentstack Paging Tests', () => {
                     type: 'count',
                     offsetKey: 'skip',
                     countKey: 'count',
-                    initialArgs: {limit: 100, include_count: true},
+                    args: {limit: 100, include_count: true},
                     resultsKey: 'content_types'
                 }
             );
@@ -115,7 +115,7 @@ describe('Contentstack Paging Tests', () => {
                         type: 'count',
                         offsetKey: 'skip',
                         countKey: 'count',
-                        initialArgs: {limit: 100, include_count: true},
+                        args: {limit: 100, include_count: true},
                     }, resultsKey: 'content_types'
                 });
             const results = [];
@@ -131,7 +131,7 @@ describe('Contentstack Paging Tests', () => {
             expect(results.length).toBeGreaterThan(200);
 
             // test reset
-            const newStream = await pMethod.fetchPagesStream();
+            const newStream = await pMethod.fetchPagesStream({prefetch: true});
             const newReader = newStream.getReader();
             const newResults = [];
             while (true) {

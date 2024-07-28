@@ -7,7 +7,7 @@ process.env.MONGO_URI = 'mongodb://localhost:27017/paginator';
 const userId = '669a906fce46e377356627fa'
 
 describe('HubSpot Paging Tests', () => {
-    let module, authUrl;
+    let module;
     beforeAll(async () => {
         await connectToDatabase();
         module = await Auther.getInstance({
@@ -60,9 +60,10 @@ describe('HubSpot Paging Tests', () => {
                     tokenParam: 'after',
                     tokenPath: '/paging/next/after',
                     resultsKey: 'results',
-                    initialArgs: { limit:100, after: 0 },
+                    args: { limit:100, after: 0 },
                 });
-            const results = await paginator.fetchAllPages(module.api.listContacts);
+            const method = paginator.newMethod(module.api.listContacts);
+            const results = await method.fetchAllPages();
             expect(results).toBeDefined();
             expect(results.length).toBeGreaterThan(200);
         })
@@ -76,7 +77,7 @@ describe('HubSpot Paging Tests', () => {
                     tokenParam: 'after',
                     tokenPath: '/paging/next/after',
                     resultsKey: 'results',
-                    initialArgs: { limit:100, after: 0 },
+                    args: { limit:100, after: 0 },
                 }
             );
             const results = await pMethod.fetchAllPages();
@@ -87,6 +88,42 @@ describe('HubSpot Paging Tests', () => {
             const newResults = await pMethod.fetchAllPages();
             expect(newResults).toBeDefined();
             expect(newResults.length).toEqual(results.length);
+        });
+        it('Retrieve pages with PaginatorMethod stream', async () => {
+            const pMethod = new PaginatorMethod(
+                module.api,
+                module.api.listContacts,
+                {
+                    type: 'token',
+                    tokenParam: 'after',
+                    tokenPath: '/paging/next/after',
+                    resultsKey: 'results',
+                    args: { limit:100, after: 0 },
+                });
+            const results = [];
+            const stream = await pMethod.fetchPagesStream();
+            const reader = stream.getReader();
+
+            while (true) {
+                const {value, done} = await reader.read();
+                if (done) break;
+                results.push(...value);
+            }
+            expect(results).toBeDefined();
+            expect(results.length).toBeGreaterThan(200);
+
+            // test reset
+            const newStream = await pMethod.fetchPagesStream({prefetch: true});
+            const newReader = newStream.getReader();
+            const newResults = [];
+            while (true) {
+                const {value, done} = await newReader.read();
+                if (done) break;
+                newResults.push(...value);
+            }
+            expect(newResults).toBeDefined();
+            expect(newResults.length).toEqual(results.length);
+
         })
     })
 });
