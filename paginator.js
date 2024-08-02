@@ -52,21 +52,20 @@ class PaginatorMethod {
 
     async fetchAllPages(options = {}) {
         this.reset(options);
-        do {
-            const results = await this.fetchNext();
-            this.results = this.results.concat(results);
-        } while (this.hasMore())
+        for await (const page of this.fetchPagesGenerator()) {
+            this.results.push(...page);
+        }
         return this.results;
     }
 
     async* fetchPagesGenerator() {
         do {
+            const resultsPromise = this.fetchNext();
             if (this.prefetch && this.lastResults) {
-                const resultsPromise = this.fetchNext();
                 yield this.lastResults
                 this.lastResults = await resultsPromise;
             } else {
-                yield await this.fetchNext();
+                yield await resultsPromise;
             }
         } while (this.hasMore());
 
