@@ -10,6 +10,14 @@ class Paginator {
     newMethod(method, options = {}) {
         return new PaginatorMethod(this.context, method, {...this.defaultOptions, ...options});
     }
+
+    fetchAllPages(method, options = {}) {
+        return this.newMethod(method, options).fetchAllPages();
+    }
+
+    fetchPagesStream(method, options = {}) {
+        return this.newMethod(method, options).fetchPagesStream();
+    }
 }
 
 class PaginatorMethod {
